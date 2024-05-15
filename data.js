@@ -4,6 +4,30 @@ const Thread = require('./db').Thread;
 
 module.exports = {
 
+    // Get stats of projects where fieldValue is present in customFields array
+    getProjectsCount: function (fieldValue) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const count = await Project.countDocuments({ 'customFields.value': fieldValue });
+                resolve(count);
+            } catch (err) {
+                reject(err);
+            }
+        })
+    },
+
+    // Get stats of threads where fieldValue is present in customFields array
+    getThreadsCount: function (fieldValue) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const count = await Thread.countDocuments({ 'customFields.value': fieldValue });
+                resolve(count);
+            } catch (err) {
+                reject(err);
+            }
+        })
+    },
+
     // Generate [count] random projects with different customFields
     addProjects: function (count = 100) {
         return new Promise(async (resolve, reject) => {
@@ -11,7 +35,6 @@ module.exports = {
                 const projects = getRandomData(count);
                 const docs = await Project.insertMany(projects);
                 resolve(docs);
-
             } catch (err) {
                 reject(err);
             }
@@ -25,7 +48,30 @@ module.exports = {
                 const threads = getRandomData(count);
                 const docs = await Thread.insertMany(threads);
                 resolve(docs);
+            } catch (err) {
+                reject(err);
+            }
+        })
+    },
 
+    // Delete all projects
+    deleteProjects: function () {
+        return new Promise(async (resolve, reject) => {
+            try {
+                await Project.deleteMany({});
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+        })
+    },
+
+    // Delete all threads
+    deleteThreads: function () {
+        return new Promise(async (resolve, reject) => {
+            try {
+                await Thread.deleteMany({});
+                resolve();
             } catch (err) {
                 reject(err);
             }
@@ -44,7 +90,7 @@ function getRandomData(count) {
         const customFields = [];
         // To generate random number of customFields with value randomly as string or array
         // If j is even, value is string, else value is array
-        for (let j = 0; j < Math.floor(Math.random() * 10); j++) {
+        for (let j = 0; j < Math.floor(Math.random() * 10) + 1; j++) {
             if (j % 2 == 0) {
                 customFields.push({
                     name: 'Field ' + j,
@@ -54,7 +100,7 @@ function getRandomData(count) {
 
                 let arr = [];
                 for (let k = 0; k < getRandomIntInRange(1, 5); k++) {
-                    arr.push('v-' + k);
+                    arr.push('module-' + k);
                 }
 
                 customFields.push({
@@ -69,4 +115,5 @@ function getRandomData(count) {
             customFields: customFields
         });
     }
+    return data;
 }
