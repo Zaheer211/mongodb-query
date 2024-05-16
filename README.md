@@ -27,7 +27,8 @@ With following JSON structure,
     },
     {
       "name": "Custom field 2",
-      "value": ["module-1", "module-2", "module-3"] // This will be randomly set as module-1 to 4 with random length upto 5
+      "value": [{"name": "module-1", "data": "some other data"}] // This will be randomly set as module-1 to 5
+      // As type of value is array of any type so it can be like ["module-1", "module-2"]
     }
   ]
 }
@@ -45,9 +46,21 @@ http://localhost:3000/add-random-threads?count=10
 
 ```
 
-Make a GET request to the following endpoint to delete/clear all projects:
+Make GET request to the following endpoints to delete/clear all projects/threads:
 
 ```bash
 http://localhost:3000/delete-projects
+http://localhost:3000/delete-threads
 
+```
+
+Make a GET request to the following endpoint to get stats for "module-1":
+
+  ```bash
+http://localhost:3000/stats?searchTerm=module-1
+
+  ```
+It will return the following JSON structure:
+```json
+{"success":true,"result":{"module-1":"2 projects and 3 threads"}}
 ```

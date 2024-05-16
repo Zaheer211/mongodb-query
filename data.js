@@ -1,3 +1,4 @@
+const { get } = require('mongoose');
 
 const Project = require('./db').Project;
 const Thread = require('./db').Thread;
@@ -5,6 +6,7 @@ const Thread = require('./db').Thread;
 module.exports = {
 
     // Get stats of projects where fieldValue is present in customFields array
+    // This assumes that we need to get stats from any customField where value is fieldValue
     getProjectsCount: function (fieldValue) {
         return new Promise(async (resolve, reject) => {
             try {
@@ -17,11 +19,74 @@ module.exports = {
     },
 
     // Get stats of threads where fieldValue is present in customFields array
+    // This assumes that we need to get stats from any customField where value is fieldValue
     getThreadsCount: function (fieldValue) {
         return new Promise(async (resolve, reject) => {
             try {
                 const count = await Thread.countDocuments({ 'customFields.value': fieldValue });
                 resolve(count);
+            } catch (err) {
+                reject(err);
+            }
+        })
+    },
+
+    // This is for the case when customFields.value is an array of objects and we need to get stats for nestedField-value
+    getProjectsCountV2: function (fieldValue) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const stats = await Project.aggregate([
+                    // Unwind the customFields array
+                    { $unwind: "$customFields" },
+                    // Unwind the value array within customFields
+                    { $unwind: { path: "$customFields.value", preserveNullAndEmptyArrays: true } },
+                    // Match documents where the value field contains the specified nestedFieldValue as an array element
+                    {
+                        $match: {
+                            $or: [
+                                { "customFields.value": fieldValue },
+                                { "customFields.value.name": fieldValue },
+                                { "customFields.value.data": fieldValue }
+                            ]
+                        }
+                    },
+                    // Group by project ID to count unique projects
+                    { $group: { _id: "$_id", count: { $sum: 1 } } },
+                    // Count the total number of projects
+                    { $group: { _id: null, totalCount: { $sum: 1 } } }
+                ]);
+                resolve(stats[0]?.totalCount);
+            } catch (err) {
+                reject(err);
+            }
+        })
+    },
+
+    // This is for the case when customFields.value is an array of objects and we need to get stats for nestedField-value
+    getThreadsCountV2: function (fieldValue) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const stats = await Thread.aggregate([
+                    // Unwind the customFields array
+                    { $unwind: "$customFields" },
+                    // Unwind the value array within customFields
+                    { $unwind: { path: "$customFields.value", preserveNullAndEmptyArrays: true } },
+                    // Match documents where the value field contains the specified nestedFieldValue as an array element
+                    {
+                        $match: {
+                            $or: [
+                                { "customFields.value": fieldValue },
+                                { "customFields.value.name": fieldValue },
+                                { "customFields.value.data": fieldValue }
+                            ]
+                        }
+                    },
+                    // Group by project ID to count unique projects
+                    { $group: { _id: "$_id", count: { $sum: 1 } } },
+                    // Count the total number of projects
+                    { $group: { _id: null, totalCount: { $sum: 1 } } }
+                ]);
+                resolve(stats[0]?.totalCount);
             } catch (err) {
                 reject(err);
             }
@@ -99,8 +164,8 @@ function getRandomData(count) {
             } else {
 
                 let arr = [];
-                for (let k = 0; k < getRandomIntInRange(1, 5); k++) {
-                    arr.push('module-' + k);
+                for (let k = 1; k <= getRandomIntInRange(1, 5); k++) {
+                    arr.push({ name: 'module-' + k, data: 'data-' + k });
                 }
 
                 customFields.push({

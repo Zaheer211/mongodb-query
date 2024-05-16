@@ -8,7 +8,8 @@ app.use(express.json());
 const {
     addProjects, addThreads,
     deleteProjects, deleteThreads,
-    getProjectsCount, getThreadsCount
+    getProjectsCount, getThreadsCount,
+    getProjectsCountV2, getThreadsCountV2
 } = require('./data');
 
 app.get('/add-random-projects', async (req, res) => {
@@ -34,12 +35,11 @@ app.get('/add-random-threads', async (req, res) => {
 app.get('/stats', async (req, res) => {
     try {
         let searchTerm = req.query.searchTerm;
-        const projectsCount = await getProjectsCount(searchTerm);
-        const threadsCount = await getThreadsCount(searchTerm);
+        const projectsCount = await getProjectsCountV2(searchTerm);
+        const threadsCount = await getThreadsCountV2(searchTerm);
         const result = {
-            [searchTerm]: `${projectsCount} projects and ${threadsCount} threads`,
+            [searchTerm]: `${projectsCount || '0'} projects and ${threadsCount || '0'} threads`,
         }
-        console.log(result);
         res.status(200).json({ success: true, result });
     } catch (err) {
         res.status(500).send
